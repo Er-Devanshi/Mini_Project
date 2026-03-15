@@ -1,43 +1,18 @@
 from flask import Flask, render_template, request, jsonify
-import joblib
 import numpy as np
+import joblib
 
 app = Flask(__name__)
 
 # Load trained model
 model = joblib.load("models/risk_model.pkl")
 
-def recommend_policy(risk_score):
-    if risk_score < 30000:
-        return "Basic Health Insurance Plan"
-    elif risk_score < 60000:
-        return "Standard Health Insurance Plan"
-    else:
-        return "Premium Comprehensive Plan"
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def home():
-    if request.method == "POST":
-        age = int(request.form["age"])
-        income = int(request.form["income"])
-        bmi = float(request.form["bmi"])
-        smoker = int(request.form["smoker"])
-
-        input_data = np.array([[age, income, bmi, smoker]])
-
-        risk_score = model.predict(input_data)[0]
-
-        policy = recommend_policy(risk_score)
-
-        risk_percent = round((risk_score / 100000) * 100, 2)
-
-        return render_template("index.html",
-                               policy=policy,
-                               risk_score=round(risk_score, 2),
-                               risk_percent=risk_percent)
-
     return render_template("index.html")
-# API endpoint for prediction
+
+
 @app.route("/api/predict", methods=["POST"])
 def api_predict():
 
@@ -48,41 +23,60 @@ def api_predict():
     bmi = data["bmi"]
     smoker = data["smoker"]
 
-    # Validation
+    # Input validation
     if age < 18 or age > 100:
         return jsonify({"error": "Age must be between 18 and 100"}), 400
 
     if bmi < 10 or bmi > 50:
         return jsonify({"error": "BMI must be between 10 and 50"}), 400
 
-    if smoker not in [0,1]:
+    if smoker not in [0, 1]:
         return jsonify({"error": "Smoker must be 0 or 1"}), 400
 
+    # Prepare input for model
     input_data = np.array([[age, income, bmi, smoker]])
 
+    # Predict risk score
     risk_score = model.predict(input_data)[0]
 
+    # Policy recommendation logic
     if risk_score < 20000:
         policy = "Basic Health Insurance Plan"
-        explanation = "Your profile shows low health risk based on age, BMI, and smoking habits."
+        benefits = [
+            "₹3L Coverage",
+            "Free Doctor Consultation",
+            "Medicine Coverage"
+        ]
+        explanation = "Your profile shows low health risk based on age, BMI and smoking habits."
 
     elif risk_score < 50000:
         policy = "Standard Health Insurance Plan"
+        benefits = [
+            "₹5L Coverage",
+            "Hospitalization Coverage",
+            "Doctor Consultation",
+            "Medicine Coverage"
+        ]
         explanation = "Your profile indicates moderate health risk."
 
     else:
         policy = "Premium Comprehensive Plan"
+        benefits = [
+            "₹10L Coverage",
+            "All Hospital Expenses",
+            "Free Annual Health Checkup",
+            "Medicine + Doctor Consultation"
+        ]
         explanation = "Your profile shows higher health risk, so a comprehensive plan is recommended."
 
+    # Return API response
     return jsonify({
         "recommended_policy": policy,
         "risk_score": int(risk_score),
-        "explanation": explanation
+        "explanation": explanation,
+        "benefits": benefits
     })
 
 
-import os
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
