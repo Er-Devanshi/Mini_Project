@@ -1,211 +1,181 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-<title>AI Insurance Policy Recommendation</title>
+    <title>AI Insurance Advisor</title>
 
-<style>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            height: 100vh;
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-body{
-font-family: Arial;
-background: linear-gradient(135deg,#6a11cb,#2575fc);
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-margin:0;
-}
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 360px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
 
-.container{
-background:white;
-padding:30px;
-border-radius:10px;
-width:380px;
-box-shadow:0 10px 25px rgba(0,0,0,0.2);
-text-align:center;
-}
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
 
-input{
-width:100%;
-padding:10px;
-margin:10px 0;
-border-radius:5px;
-border:1px solid #ccc;
-}
+        button {
+            width: 100%;
+            padding: 10px;
+            background: green;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
 
-button{
-padding:10px 20px;
-background:#2e7d32;
-color:white;
-border:none;
-border-radius:5px;
-cursor:pointer;
-}
+        button:hover {
+            background: darkgreen;
+        }
 
-button:hover{
-background:#1b5e20;
-}
+        .hidden {
+            display: none;
+        }
 
-.explanation-box{
-margin-top:10px;
-background:#f1f1f1;
-padding:10px;
-border-radius:5px;
-}
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f9f9f9;
+            text-align: left;
+        }
 
-ul{
-text-align:left;
-}
-
-/* Risk Meter */
-
-.meter{
-height:20px;
-background:#ddd;
-border-radius:10px;
-margin-top:10px;
-overflow:hidden;
-}
-
-.meter-fill{
-height:100%;
-background:linear-gradient(90deg,green,orange,red);
-width:0%;
-}
-
-</style>
-
+        ul {
+            padding-left: 18px;
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="container">
 
-<h2>AI Insurance Policy Recommendation</h2>
+    <!-- 🔹 PAGE 1 (NAME) -->
+    <div id="page1">
+        <h2>AI Insurance Advisor</h2>
+        <input type="text" id="name" placeholder="Enter your name">
+        <button onclick="startApp()">Continue</button>
+    </div>
 
-<form id="insuranceForm">
+    <!-- 🔹 PAGE 2 (FORM) -->
+    <div id="page2" class="hidden">
 
-<input type="number" id="age" placeholder="Age" required>
+        <h3 id="greeting"></h3>
 
-<input type="number" id="income" placeholder="Income" required>
+        <form id="form">
+            <input type="number" id="age" placeholder="Age" required>
+            <input type="number" id="income" placeholder="Income" required>
+            <input type="number" id="bmi" placeholder="BMI" required>
+            <input type="number" id="smoker" placeholder="Smoker (0 or 1)" required>
 
-<input type="number" id="bmi" placeholder="BMI" required>
+            <button>Get Recommendation</button>
+        </form>
 
-<input type="number" id="smoker" placeholder="Smoker (0 or 1)" required>
+        <div id="result"></div>
 
-<button type="submit">Get Recommendation</button>
-
-</form>
-
-<div id="result"></div>
+    </div>
 
 </div>
 
 <script>
 
-document.getElementById("insuranceForm").addEventListener("submit", function(e){
+// 🔥 Start App
+function startApp(){
+    let name = document.getElementById("name").value;
 
-e.preventDefault()
+    let hour = new Date().getHours();
+    let greet = "Hello";
 
-let age = document.getElementById("age").value
-let income = document.getElementById("income").value
-let bmi = document.getElementById("bmi").value
-let smoker = document.getElementById("smoker").value
+    if(hour < 12) greet = "Good Morning";
+    else if(hour < 18) greet = "Good Afternoon";
+    else greet = "Good Evening";
 
-fetch("/api/predict",{
+    document.getElementById("greeting").innerText = `${greet}, ${name} 👋`;
 
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-age:parseInt(age),
-income:parseFloat(income),
-bmi:parseFloat(bmi),
-smoker:parseInt(smoker)
-
-})
-
-})
-
-.then(response=>response.json())
-
-.then(data=>{
-
-let riskLevel=""
-let riskColor=""
-
-if(data.risk_score < 20000){
-riskLevel="Low Risk"
-riskColor="green"
-}
-else if(data.risk_score < 50000){
-riskLevel="Moderate Risk"
-riskColor="orange"
-}
-else{
-riskLevel="High Risk"
-riskColor="red"
+    document.getElementById("page1").classList.add("hidden");
+    document.getElementById("page2").classList.remove("hidden");
 }
 
-/* Risk meter percentage */
-let meterValue = Math.min(data.risk_score / 1000,100)
 
-document.getElementById("result").innerHTML = `
+// 🔥 Form Submit
+document.getElementById("form").addEventListener("submit", function(e){
+    e.preventDefault();
 
-<h3 style="color:green;">
-Recommended Policy: ${data.recommended_policy}
-</h3>
+    fetch("/api/predict", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+            age: age.value,
+            income: income.value,
+            bmi: bmi.value,
+            smoker: smoker.value
+        })
+    })
+    .then(res=>res.json())
+    .then(data=>{
 
-<p><strong>Risk Score:</strong> ₹${data.risk_score}</p>
+        let riskLevel="", color="";
 
-<p><strong>Risk Level:</strong> 
-<span style="color:${riskColor};">${riskLevel}</span>
-</p>
+        if(data.risk_score < 30000){
+            riskLevel="Low Risk"; color="green";
+        } else if(data.risk_score < 60000){
+            riskLevel="Medium Risk"; color="orange";
+        } else {
+            riskLevel="High Risk"; color="red";
+        }
 
-<h4>Risk Meter</h4>
+        document.getElementById("result").innerHTML = `
+        <div class="result-box">
 
-<div class="meter">
-<div class="meter-fill" style="width:${meterValue}%"></div>
-</div>
+        <h3>${data.recommended_policy}</h3>
 
-<h4>Policy Benefits</h4>
+        <p><b>Risk Score:</b> ₹${data.risk_score}</p>
 
-<ul>
-${data.benefits.map(b => `<li>${b}</li>`).join("")}
-</ul>
+        <p><b>Risk Level:</b> 
+        <span style="background:${color};color:white;padding:5px;border-radius:5px;">
+        ${riskLevel}
+        </span></p>
 
-<h4>Customer Profile</h4>
+        <!-- Meter -->
+        <div style="background:#ddd;border-radius:10px;">
+            <div style="width:${Math.min(data.risk_score/1000,100)}%;
+                        background:${color};
+                        height:10px;"></div>
+        </div>
 
-<ul>
-<li>Age: ${age}</li>
-<li>Income: ₹${income}</li>
-<li>BMI: ${bmi}</li>
-<li>Smoker: ${smoker == 1 ? "Yes" : "No"}</li>
-</ul>
+        <p><b>Explanation:</b> ${data.explanation}</p>
 
-<div class="explanation-box">
-<strong>Explanation:</strong> ${data.explanation}
-</div>
+        <h4>Policy Benefits:</h4>
+        <ul>${data.benefits.map(b=>`<li>${b}</li>`).join("")}</ul>
 
-`
+        <h4>Suggestions:</h4>
+        <ul>${data.suggestions.map(s=>`<li>${s}</li>`).join("")}</ul>
 
-})
+        </div>
+        `;
 
-.catch(error=>{
+    });
 
-document.getElementById("result").innerHTML =
-"<p style='color:red;'>Error getting recommendation</p>"
-
-})
-
-})
+});
 
 </script>
 
 </body>
-
 </html>
