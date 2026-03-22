@@ -57,17 +57,21 @@ def recommend_policies(risk_score):
 def generate_suggestions(age, bmi, smoker):
     suggestions = []
 
+    # BMI based
     if bmi > 25:
-        suggestions.append("Maintain a healthy BMI")
+        suggestions.append("⚠️ Your BMI is high. Try regular exercise and a balanced diet.")
 
+    # Smoking
     if smoker == 1:
-        suggestions.append("Quit smoking")
+        suggestions.append("🚭 Smoking detected. Consider quitting to reduce health risks.")
 
-    if age > 45:
-        suggestions.append("Go for regular health checkups")
+    # Age based
+    if age > 40:
+        suggestions.append("🩺 Regular health checkups are recommended for your age group.")
 
-    if not suggestions:
-        suggestions.append("Keep maintaining a healthy lifestyle")
+    # Default healthy message
+    if len(suggestions) == 0:
+        suggestions.append("✅ You are maintaining a healthy lifestyle. Keep it up!")
 
     return suggestions
 
@@ -83,13 +87,14 @@ def home():
 # -------------------------------
 # API Route
 # -------------------------------
-@app.route("/api/predict", methods=["POST"])
+@app.route('/api/predict', methods=['POST'])
 def predict():
     try:
         data = request.get_json()
 
+        # Inputs
         age = int(data["age"])
-        income = int(data["income"])
+        income = float(data["income"])
         bmi = float(data["bmi"])
         smoker = int(data["smoker"])
 
@@ -99,17 +104,23 @@ def predict():
         # Get policies
         policies = recommend_policies(risk_score)
 
-        # Suggestions
+        # Basic suggestions
         suggestions = generate_suggestions(age, bmi, smoker)
 
-        # Risk level
+        # 🔥 Smart AI Tips + Risk Level
         if risk_score < 30000:
+            suggestions.append("🟢 Low Risk: Maintain your healthy lifestyle.")
             risk_level = "Low Risk"
+
         elif risk_score < 60000:
+            suggestions.append("🟠 Medium Risk: Improve diet and increase physical activity.")
             risk_level = "Medium Risk"
+
         else:
+            suggestions.append("🔴 High Risk: Consult a doctor and consider comprehensive insurance.")
             risk_level = "High Risk"
 
+        # Response
         return jsonify({
             "risk_score": round(risk_score, 2),
             "risk_level": risk_level,
