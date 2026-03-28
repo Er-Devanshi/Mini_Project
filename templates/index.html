@@ -64,6 +64,7 @@ button:hover {
     margin-top: 10px;
 }
 
+/* ✅ Risk Graph Styles */
 .risk-bar-container {
     width: 100%;
     background: #eee;
@@ -76,13 +77,13 @@ button:hover {
     border-radius: 10px;
     width: 0%;
     background: #4CAF50;
+    transition: width 0.5s ease;
 }
 </style>
 
 </head>
 
 <body>
-
 
 <div class="box">
     <p style="text-align:center; opacity:0.7;">AI Powered Insurance Advisor</p>
@@ -145,6 +146,10 @@ document.getElementById("result").innerHTML = `
 return;
 }
 
+/* ✅ Calculate percentage for graph */
+let riskPercent = data.risk_score / 500;  // adjust if needed
+if (riskPercent > 100) riskPercent = 100;
+
 document.getElementById("result").innerHTML = `
 
 <h3 style="color:green;">
@@ -160,9 +165,15 @@ document.getElementById("result").innerHTML = `
 
 <p><strong>Risk Score:</strong> ₹${data.risk_score}</p>
 
+<!-- ✅ RISK GRAPH ADDED -->
+<div class="risk-bar-container">
+    <div class="risk-bar" style="width:${riskPercent}%"></div>
+</div>
+
 <div class="explanation-box">
 <strong>Explanation:</strong> ${data.explanation}
 </div>
+
 <div class="tips-box">
     <strong>💡 Smart AI Tips:</strong>
     <ul>
@@ -181,8 +192,6 @@ document.getElementById("result").innerHTML = `
 });
 
 });
-
-
 
 </script>
 
