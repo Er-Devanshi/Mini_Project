@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>AI Insurance Advisor</title>
-
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 body {
     display: flex;
@@ -106,6 +106,10 @@ button:hover {
 
 </form>
 
+<div id="loading" style="display:none; text-align:center;">
+  <p>Analyzing your profile...</p>
+</div>
+
 <div id="result"></div>
 
 </div>
@@ -120,7 +124,11 @@ const age = document.querySelector("input[name='age']").value;
 const income = document.querySelector("input[name='income']").value;
 const bmi = document.querySelector("input[name='bmi']").value;
 const smoker = document.querySelector("input[name='smoker']").value;
-
+if(age <= 0 || income <= 0 || bmi <= 0){
+    alert("Please enter valid values");
+    return;
+}
+document.getElementById("loading").style.display = "block";
 fetch("/api/predict",{
 
 method:"POST",
@@ -141,6 +149,7 @@ smoker:parseInt(smoker)
 .then(response => response.json())
 
 .then(data =>{
+document.getElementById("loading").style.display = "none";
 
 if(data.error){
 document.getElementById("result").innerHTML = `
@@ -154,37 +163,65 @@ let riskPercent = data.risk_score / 500;  // adjust if needed
 if (riskPercent > 100) riskPercent = 100;
 
 document.getElementById("result").innerHTML = `
+<h3 style="color:green;">🏆 Recommended: ${data.recommended_policy}</h3>
 
-<h3 style="color:green;">
-🥇 Recommended: ${data.recommended_policy}
-</h3>
-
-<p><strong>Other Options:</strong></p>
-<ul>
-    <li>🥈 ${data.all_policies[1]}</li>
-    <li>🥉 ${data.all_policies[2]}</li>
-    <li>⭐ ${data.all_policies[3]}</li>
-</ul>
+<p><strong>Why this plan?</strong> ${data.why}</p>
 
 <p><strong>Risk Score:</strong> ₹${data.risk_score}</p>
 
-<!-- ✅ RISK GRAPH ADDED -->
 <div class="risk-bar-container">
-    <div class="risk-bar" style="width:${riskPercent}%"></div>
+  <div class="risk-bar" style="width:${riskPercent}%"></div>
 </div>
+
+<h4>📊 Risk Breakdown</h4>
+<ul>
+  <li>Age: ${data.breakdown.age}</li>
+  <li>BMI: ${data.breakdown.bmi}</li>
+  <li>Smoking: ${data.breakdown.smoker}</li>
+  <li>Income: ${data.breakdown.income}</li>
+</ul>
+
+<h4>📊 Plan Comparison</h4>
+<table border="1" width="100%">
+<tr><th>Plan</th><th>Coverage</th><th>Premium</th></tr>
+<tr><td>Basic</td><td>₹2L</td><td>Low</td></tr>
+<tr><td>Standard</td><td>₹5L</td><td>Medium</td></tr>
+<tr><td>Premium</td><td>₹10L</td><td>High</td></tr>
+</table>
 
 <div class="explanation-box">
 <strong>Explanation:</strong> ${data.explanation}
 </div>
 
 <div class="tips-box">
-    <strong>💡 Smart AI Tips:</strong>
-    <ul>
-        ${data.suggestions.map(tip => `<li>${tip}</li>`).join("")}
-    </ul>
+<strong>💡 Smart AI Tips:</strong>
+<ul>
+${data.suggestions.map(tip => `<li>${tip}</li>`).join("")}
+</ul>
 </div>
 
+<canvas id="riskChart" width="300" height="200"></canvas>
+
+<br>
+<button onclick="window.print()">Download Report</button>
 `;
+const ctx = document.getElementById('riskChart').getContext('2d');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['Age', 'BMI', 'Smoking', 'Income'],
+        datasets: [{
+            label: 'Risk Contribution',
+            data: [
+                data.breakdown.age,
+                data.breakdown.bmi,
+                data.breakdown.smoker,
+                data.breakdown.income
+            ]
+        }]
+    }
+});
 
 })
 

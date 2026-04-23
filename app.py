@@ -7,18 +7,29 @@ app = Flask(__name__)
 # -------------------------------
 def calculate_risk(age, income, bmi, smoker):
     risk = 0
+    breakdown = {}
 
-    # Basic factors
-    risk += age * 100
-    risk += bmi * 200
+    # Age
+    age_score = age * 80
+    risk += age_score
+    breakdown["age"] = age_score
 
-    if smoker == 1:
-        risk += 20000
+    # BMI
+    bmi_score = bmi * 150
+    risk += bmi_score
+    breakdown["bmi"] = bmi_score
 
-    if income > 50000:
-        risk += 10000
+    # Smoking
+    smoker_score = 20000 if smoker == 1 else 0
+    risk += smoker_score
+    breakdown["smoker"] = smoker_score
 
-    return risk
+    # Income
+    income_score = 5000 if income < 300000 else 10000
+    risk += income_score
+    breakdown["income"] = income_score
+
+    return risk, breakdown
 
 
 # -------------------------------
@@ -99,7 +110,7 @@ def predict():
         smoker = int(data["smoker"])
 
         # Calculate risk
-        risk_score = calculate_risk(age, income, bmi, smoker)
+        risk_score, breakdown = calculate_risk(age, income, bmi, smoker)
 
         # Get policies
         policies = recommend_policies(risk_score)
@@ -122,19 +133,19 @@ def predict():
 
         # Response
         return jsonify({
-            "risk_score": round(risk_score, 2),
-            "risk_level": risk_level,
-            "recommended_policy": policies[0],
-            "all_policies": policies,
-            "explanation": f"Based on your profile, you fall under {risk_level}.",
-            "suggestions": suggestions
-        })
-
+    "risk_score": round(risk_score, 2),
+    "risk_level": risk_level,
+    "recommended_policy": policies[0],
+    "all_policies": policies,
+    "explanation": f"Based on your age ({age}), BMI ({bmi}), and lifestyle, you fall under {risk_level}.",
+    "suggestions": suggestions,
+    "breakdown": breakdown,
+    "why": f"This plan is recommended because your risk level is {risk_level} and aligns with your profile."
+})
     except Exception as e:
         return jsonify({"error": str(e)})
 
 # -------------------------------
 # Run App
-# -------------------------------
 if __name__ == "__main__":
     app.run(debug=True, port=10000)
